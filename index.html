@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SWT-112 Exam - Sign In</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <header>
+    <div><b>SWT-112 Online Exam</b></div>
+    <small class="muted">Roll-number login</small>
+  </header>
+  <main>
+    <div class="card">
+      <h2>Student Sign In</h2>
+      <label>Roll Number</label>
+      <input id="roll" placeholder="FD25502001" />
+      <div class="row" style="margin-top:12px;">
+        <button id="btn">Sign in</button>
+        <small id="msg" class="muted"></small>
+      </div>
+    </div>
+  </main>
+
+  <script src="assets/config.js"></script>
+  <script src="assets/api.js"></script>
+  <script>
+    const rollEl = document.getElementById('roll');
+    const msgEl = document.getElementById('msg');
+
+    document.getElementById('btn').addEventListener('click', async () => {
+      msgEl.textContent = 'Signing in...';
+      const roll = rollEl.value.trim().toUpperCase();
+      const data = await apiPost('signin', { roll });
+      if (!data.ok) {
+        msgEl.textContent = data.error || 'Sign-in failed';
+        msgEl.className = 'bad';
+        return;
+      }
+      localStorage.setItem('roll', data.roll);
+      localStorage.setItem('token', data.token);
+      location.href = 'student/dashboard.html';
+    });
+  </script>
+</body>
+</html>

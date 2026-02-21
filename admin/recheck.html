@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin - Recheck</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <header>
+    <div><b>Recheck Attempt</b></div>
+    <small id="meta" class="muted"></small>
+  </header>
+  <main>
+    <div class="card">
+      <div id="attempt"></div>
+    </div>
+
+    <div class="card">
+      <h3>Answers</h3>
+      <div id="answers"></div>
+    </div>
+
+    <div class="card">
+      <label>Total Manual Score</label>
+      <input id="manualScore" type="number" value="0" />
+      <button id="save" style="margin-top:10px;">Save Recheck</button>
+      <small id="msg" class="muted"></small>
+    </div>
+  </main>
+
+  <script src="../assets/config.js"></script>
+  <script src="../assets/api.js"></script>
+  <script>
+    const qs = new URLSearchParams(location.search);
+    const attemptId = qs.get('attemptId');
+    const adminKey = qs.get('adminKey');
+
+    if (!attemptId || !adminKey) {
+      document.body.innerHTML = 'Missing attemptId/adminKey';
+      throw new Error('Missing params');
+    }
+
+    const marksByQid = {}; // qId -> number
+
+    async function load() {
+      const data = await apiGet('admin/attempt', { adminKey, attemptId });
+      if (!data.ok) { alert(data.error || 'Failed'); return; }
+
+      document.getElementById('meta').textContent = `AttemptID: ${attemptId}`;
+
+      const a = data.attempt;
+      document.getElementById('attempt').innerHTML = `
+        <div><b>Roll:</b> ${a.roll}</div>
+        <div><b>Status:</b> ${a.status}</div>
+        <div><b>MCQ:</b> ${a.mcqScore}/${a.mcqMax}</div>
+        <div><b>TabSwitches:</b> ${a.tabSwitches} | <b>Copy:</b> ${a.copyCount} | <b>Paste:</b> ${a.pasteCount}</div>
+        <div><b>Suspicious log:</b><pre style="white-space:pre-wrap;background:#f3f4f6;padding:10px;border-radius:8px;">${a.suspiciousLog || ''}</pre></div>
+      `;
+
+      const root = document.getElementById('answers');
+      root.innerHTML = '';
+      data.answers.forEach(row => {
+        const div = document.createElement('div');
+        div.className = 'q';
+        div.innerHTML = `
+          <div><b>${row.qId}</b></div>
+          <div style="margin-top:6px;"><pre style="white-space:pre-wrap;">${row.answer || ''}</pre></div>
+          <div class="row" style="margin-top:10px;">
+            <label style="min-width:160px;">Marks for ${row.qId}</label>
+            <input type="number" value="${row.marksAwarded || 0}" style="max-width:160px;" />
+          </div>
+        `;
+        const inp = div.querySelector('input');
+        inp.addEventListener('input', () => { marksByQid[row.qId] = Number(inp.value || 0); });
+        marksByQid[row.qId] = Number(row.marksAwarded || 0);
+        root.appendChild(div);
+      });
+    }
+
+    document.getElementById('save').addEventListener('click', async () => {
+      const manualScore = Number(document.getElementById('manualScore').value || 0);
+      const msg = document.getElementById('msg');
+      msg.textContent = 'Saving...';
+
+      const res = await apiPost('admin/recheck', { adminKey, attemptId, manualScore, marksByQid });
+      msg.textContent = res.ok ? 'Saved' : (res.error || 'Failed');
+      msg.className = res.ok ? 'good' : 'bad';
+    });
+
+    load();
+  </script>
+</body>
+</html>

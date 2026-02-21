@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Result</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <header>
+    <div><b>Result (Provisional)</b></div>
+    <small class="muted">MCQ score is automatic; descriptive will be rechecked by teacher.</small>
+  </header>
+  <main>
+    <div class="card">
+      <div id="out"></div>
+      <div style="margin-top:10px;">
+        <a href="dashboard.html">Back to dashboard</a>
+      </div>
+    </div>
+  </main>
+  <script>
+    const roll = localStorage.getItem('roll');
+    const mcqScore = localStorage.getItem('lastMcqScore');
+    const mcqMax = localStorage.getItem('lastMcqMax');
+    document.getElementById('out').innerHTML = `
+      <div><b>Roll:</b> ${roll || '-'}</div>
+      <div><b>MCQ Score:</b> ${mcqScore || 0} / ${mcqMax || 0}</div>
+      <div class="muted" style="margin-top:8px;">Final score will be updated after teacher recheck.</div>
+    `;
+  </script>
+</body>
+</html>

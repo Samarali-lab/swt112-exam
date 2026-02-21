@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin - Attempts</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <header>
+    <div><b>Teacher Admin</b></div>
+    <small class="muted">Use Admin Key to access</small>
+  </header>
+  <main>
+    <div class="card">
+      <label>Admin Key</label>
+      <input id="k" placeholder="JAVA-ADMIN-2026" />
+      <label style="margin-top:10px;">Exam ID</label>
+      <input id="examId" value="SWT112-JAVA-2026" />
+      <div class="row" style="margin-top:12px;">
+        <button id="load">Load Attempts</button>
+        <small id="msg" class="muted"></small>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Attempts</h3>
+      <div id="list"></div>
+    </div>
+  </main>
+
+  <script src="../assets/config.js"></script>
+  <script src="../assets/api.js"></script>
+  <script>
+    document.getElementById('load').addEventListener('click', async () => {
+      const adminKey = document.getElementById('k').value.trim();
+      const examId = document.getElementById('examId').value.trim();
+      const msg = document.getElementById('msg');
+      msg.textContent = 'Loading...';
+
+      const data = await apiGet('admin/attempts', { adminKey, examId });
+      if (!data.ok) { msg.textContent = data.error || 'Failed'; msg.className='bad'; return; }
+
+      msg.textContent = `Loaded ${data.attempts.length} attempt(s)`;
+      msg.className = 'muted';
+
+      const root = document.getElementById('list');
+      root.innerHTML = '';
+      data.attempts.forEach(a => {
+        const div = document.createElement('div');
+        div.className = 'q';
+        div.innerHTML = `
+          <div><b>${a.roll}</b> | Attempt #${a.attemptNo} | ${a.status}</div>
+          <small class="muted">
+            MCQ: ${a.mcqScore}/${a.mcqMax} |
+            Manual: ${a.manualScore === '' ? '-' : a.manualScore} |
+            Final: ${a.finalScore === '' ? '-' : a.finalScore} |
+            TabSwitches: ${a.tabSwitches} Copy: ${a.copyCount} Paste: ${a.pasteCount}
+          </small>
+          <div style="margin-top:10px;">
+            <button class="secondary">Open</button>
+          </div>
+        `;
+        div.querySelector('button').addEventListener('click', () => {
+          const url = `recheck.html?attemptId=${encodeURIComponent(a.attemptId)}&adminKey=${encodeURIComponent(adminKey)}`;
+          location.href = url;
+        });
+        root.appendChild(div);
+      });
+    });
+  </script>
+</body>
+</html>
